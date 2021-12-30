@@ -6,6 +6,8 @@ This library is a collection of utilities for running FastAPI applications at Ex
 ## HttpizeErrorsAPIRouter
 This custom router's main functionality is to handle errors per route instead of through a global exception handler by adding the `httpize_errors` keyword argument to the FastAPI route declaration. This allows each route to return normal informative Python errors instead of the FastAPI `HTTPException` class to get valid responses.
 
+It also times each request and sets the `X-Response-Time` header on the Response
+
 **An example route**
 
 ```python

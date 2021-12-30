@@ -42,7 +42,6 @@ class HttpizeErrorsAPIRoute(APIRoute):
 
         async def custom_route_handler(request: Request) -> Response:
             error_types = tuple(self.httpize_errors.keys())
-            print("ERROR TYPES:", error_types)
             try:
                 before = time.time()
                 response: Response = await original_route_handler(request)
