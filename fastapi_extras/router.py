@@ -56,15 +56,13 @@ class HttpizeErrorsAPIRoute(APIRoute):
                     self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
                     self.logger.error(str(e))
 
-                print("CAUGHT ERROR TYPES:", e)
-
                 # If the error is one that we want to catch, return a
                 # consistent response with the Error type so it can
                 # be reversed by the PAM SDK
                 value = self.httpize_errors[e.__class__]
                 if isinstance(value, int):
                     code = value
-                    message = getattr(e, "detail", "")
+                    message = getattr(e, "detail", str(e))
                 elif isinstance(value, tuple) and len(value) == 2:
                     code, message = value
                 else:
@@ -280,7 +278,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
                 )
                 if isinstance(route, HttpizeErrorsAPIRoute):
                     kwargs["httpize_errors"] = route.httpize_errors  # type: ignore
-                self.add_api_route(
+                self.add_api_route( 
                     prefix + route.path, route.endpoint, **kwargs  # type: ignore
                 )
 

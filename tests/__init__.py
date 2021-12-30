@@ -1,4 +1,4 @@
-from fastapi_httpize_errors_router import __version__
+from fastapi_extras import __version__
 
 
 def test_version():
