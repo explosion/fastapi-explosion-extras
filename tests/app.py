@@ -1,4 +1,4 @@
-from fastapi_httpize_errors_router import HttpizeErrorsAPIRouter, HttpizeErrorsAPIRoute
+from fastapi_extras import HttpizeErrorsAPIRouter, HttpizeErrorsAPIRoute
 from tests.api import router
 
 

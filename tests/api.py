@@ -1,4 +1,4 @@
-from fastapi_httpize_errors_router import HttpizeErrorsAPIRouter
+from fastapi_extras import HttpizeErrorsAPIRouter
 
 
 router = HttpizeErrorsAPIRouter(tags=["some tag"])

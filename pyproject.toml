@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fastapi-httpize-errors-router"
+name = "fastapi-extras"
 version = "0.1.0"
 description = ""
 authors = ["Kabir <kabir@explosion.ai>"]
