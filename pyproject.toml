@@ -6,7 +6,7 @@ authors = ["Kabir <kabir@explosion.ai>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-fastapi = "^0.70.1"
+fastapi = ">=0.70.1, <1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
