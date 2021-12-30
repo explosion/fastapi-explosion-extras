@@ -1,7 +1,7 @@
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
-from fastapi_extras import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter
+from fastapi_extras import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter, init_app
 from starlette import routing
 
 from .api import router as api_router
@@ -34,10 +34,8 @@ def test_route_definition():
 def test_route_definition_app_router_included():
     app = FastAPI()
     app.router = HttpizeErrorsAPIRouter.from_app(app)
-    
     app.include_router(api_router)
-
-    print(vars(app.routes[-1]))
+    init_app(app)
 
     assert isinstance(app.routes[-1], routing.Route)
 
