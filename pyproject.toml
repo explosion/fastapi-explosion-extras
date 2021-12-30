@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "fastapi-httpize-errors-router"
+version = "0.1.0"
+description = ""
+authors = ["Kabir <kabir@explosion.ai>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.70.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+requests = "^2.26.0"
+uvicorn = "^0.16.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
