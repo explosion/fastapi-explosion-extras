@@ -5,7 +5,7 @@ description = ""
 authors = ["Kabir <kabir@explosion.ai>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.7,<=3.10"
 fastapi = ">=0.70.1, <1.0"
 
 [tool.poetry.dev-dependencies]
