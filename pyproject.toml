@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-extras"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Kabir <kabir@explosion.ai>"]
 
