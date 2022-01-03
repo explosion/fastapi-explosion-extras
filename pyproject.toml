@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fastapi-extras"
-version = "0.1.3"
-description = ""
+version = "0.1.4"
+description = "A collection of utilities for running FastAPI applications at Explosion AI."
 authors = ["Kabir <kabir@explosion.ai>"]
 
 [tool.poetry.dependencies]
