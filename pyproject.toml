@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "fastapi-extras"
-version = "0.1.4"
+version = "0.1.5"
 description = "A collection of utilities for running FastAPI applications at Explosion AI."
 authors = ["Kabir <kabir@explosion.ai>"]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<=3.10"
-fastapi = ">=0.70.1, <1.0"
+fastapi = ">=0.68.1, <1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
