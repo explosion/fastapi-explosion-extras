@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .router import HttpizeErrorsAPIRouter
+from .routing import HttpizeErrorsAPIRouter
 
 
 def init_app(app: FastAPI) -> None:

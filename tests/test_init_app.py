@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter
 from fastapi_extras.initialize import init_app
-from fastapi_extras.router import HttpizeErrorsAPIRouter
+from fastapi_extras.routing import HttpizeErrorsAPIRouter
 
 
 def test_init_app():

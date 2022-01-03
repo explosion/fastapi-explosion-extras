@@ -1,3 +1,4 @@
+from re import L
 import time
 import traceback
 from logging import Logger
@@ -22,6 +23,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
     """HttpizeErrorsAPIRoute overrides default FastAPI behavior to
     add common Response error types and set the OpenAPI operation_id
     to the name of the decorated route function."""
+    logger: Optional[Logger] = None
 
     def __init__(
         self,
@@ -33,7 +35,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
         super().__init__(*args, **kwargs)
         self.httpize_errors = httpize_errors or {}
         self.operation_id = self.name
-        self.logger = logger
+        self.logger = HttpizeErrorsAPIRoute.logger or logger
 
     def get_route_handler(
         self,
@@ -108,9 +110,12 @@ class HttpizeErrorsAPIRouter(APIRouter):
         )
         return router
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, logger: Optional[Logger] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.route_class = HttpizeErrorsAPIRoute
+        route_class = HttpizeErrorsAPIRoute
+        if logger is not None:
+            route_class.logger = logger
+        self.route_class = route_class
 
     def add_api_route(
         self,

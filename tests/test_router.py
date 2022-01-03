@@ -1,3 +1,4 @@
+import logging
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
@@ -53,3 +54,23 @@ def test_route_definition_app_router_included():
     print(client.app.routes)
     res = client.get("testing", params={"i": -1})
     assert res.status_code == 400
+
+
+def test_logger_set():
+    router = HttpizeErrorsAPIRouter(tags=["some tag"])
+    
+    @router.get("testing")
+    def test_route():
+        return "test"
+
+    assert router.routes[0].logger == None
+
+    logger = logging.getLogger(__name__)
+    router = HttpizeErrorsAPIRouter(tags=["some tag"], logger=logger)
+    
+    @router.get("testing")
+    def test_route():
+        return "test"
+
+    assert router.routes[0].logger == logger
+    
