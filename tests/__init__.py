@@ -1,4 +1,4 @@
-from fastapi_extras import __version__
+from fastapi_explosion_extras import __version__
 
 
 def test_version():

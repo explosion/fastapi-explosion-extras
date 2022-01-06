@@ -2,7 +2,7 @@ import logging
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
-from fastapi_extras import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter, init_app
+from fastapi_explosion_extras import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter, init_app
 from starlette import routing
 
 from .api import router as api_router
