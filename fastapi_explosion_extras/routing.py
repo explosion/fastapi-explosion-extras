@@ -1,4 +1,3 @@
-from re import L
 import time
 import traceback
 from logging import Logger
@@ -12,7 +11,6 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
 from fastapi.types import DecoratedCallable
 from fastapi.utils import get_value_or_default
-from pydantic import BaseModel
 from starlette import routing
 from starlette.routing import BaseRoute
 
