@@ -1,4 +1,4 @@
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 
 from .initialize import init_app
 from .routing import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter
