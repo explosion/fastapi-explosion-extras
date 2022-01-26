@@ -3,6 +3,8 @@ import traceback
 from logging import Logger
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set, Type, Union
 
+from pyparsing import empty
+
 from fastapi import HTTPException, Request, Response, params
 from fastapi.applications import FastAPI
 from fastapi.datastructures import Default, DefaultPlaceholder
@@ -28,12 +30,14 @@ class HttpizeErrorsAPIRoute(APIRoute):
         *args,
         httpize_errors: Optional[ErrorsType] = None,
         logger: Optional[Logger] = None,
+        empty_response: 
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.httpize_errors = httpize_errors or {}
         self.operation_id = self.name
         self.logger = HttpizeErrorsAPIRoute.logger or logger
+        self.empty_response = empty_response
 
     def get_route_handler(
         self,
@@ -79,9 +83,9 @@ class HttpizeErrorsAPIRoute(APIRoute):
                     self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
                 raise e
             else:
-                if response is None or response.body == b"null":
+                if response is None or getattr(response, "body", None) == b"null":
                     # Return an empty response instead of None/null for delete requests
-                    return Response(status_code=204)
+                    return self.empty_response
                 else:
                     return response
 
