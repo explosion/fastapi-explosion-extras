@@ -30,7 +30,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
         *args,
         httpize_errors: Optional[ErrorsType] = None,
         logger: Optional[Logger] = None,
-        empty_response: 
+        empty_response: Response = Response(status_code=204),
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
