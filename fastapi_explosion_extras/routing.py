@@ -33,9 +33,10 @@ class HttpizeErrorsAPIRoute(APIRoute):
         empty_response: Response = Response(status_code=204),
         **kwargs,
     ) -> None:
+        if "operation_id" not in kwargs:
+            kwargs["operation_id"] = self.name
         super().__init__(*args, **kwargs)
         self.httpize_errors = httpize_errors or {}
-        self.operation_id = self.name
         self.logger = HttpizeErrorsAPIRoute.logger or logger
         self.empty_response = empty_response
 
