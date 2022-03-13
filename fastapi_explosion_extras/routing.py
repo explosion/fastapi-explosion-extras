@@ -3,8 +3,6 @@ import traceback
 from logging import Logger
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set, Type, Union
 
-from pyparsing import empty
-
 from fastapi import HTTPException, Request, Response, params
 from fastapi.applications import FastAPI
 from fastapi.datastructures import Default, DefaultPlaceholder
@@ -12,11 +10,11 @@ from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
 from fastapi.types import DecoratedCallable
-from fastapi.utils import get_value_or_default
+from fastapi.utils import generate_unique_id, get_value_or_default
 from starlette import routing
 from starlette.routing import BaseRoute
 
-from .types import ErrorsType, ResponsesType, _ReturnT
+from .types import ErrorsType
 
 
 class HttpizeErrorsAPIRoute(APIRoute):
@@ -150,6 +148,9 @@ class HttpizeErrorsAPIRouter(APIRouter):
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         openapi_extra: Optional[Dict[str, Any]] = None,
+        generate_unique_id_function: Union[
+            Callable[[APIRoute], str], DefaultPlaceholder
+        ] = Default(generate_unique_id)
     ) -> None:
         route_class = self.route_class
         responses = responses or {}
@@ -166,6 +167,9 @@ class HttpizeErrorsAPIRouter(APIRouter):
         current_callbacks = self.callbacks.copy()
         if callbacks:
             current_callbacks.extend(callbacks)
+        current_generate_unique_id = get_value_or_default(
+            generate_unique_id_function, self.generate_unique_id_function
+        )
         route = route_class(
             self.prefix + path,
             httpize_errors=httpize_errors,
@@ -193,6 +197,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
             dependency_overrides_provider=self.dependency_overrides_provider,
             callbacks=current_callbacks,
             openapi_extra=openapi_extra,
+            generate_unique_id_function=current_generate_unique_id
         )
         self.routes.append(route)
 
@@ -217,6 +222,9 @@ class HttpizeErrorsAPIRouter(APIRouter):
         callbacks: Optional[List[BaseRoute]] = None,
         deprecated: Optional[bool] = None,
         include_in_schema: bool = True,
+        generate_unique_id_function: Callable[[APIRoute], str] = Default(
+            generate_unique_id
+        ),
     ) -> None:
         if prefix:
             assert prefix.startswith("/"), "A path prefix must start with '/'"
@@ -257,6 +265,12 @@ class HttpizeErrorsAPIRouter(APIRouter):
                     current_callbacks.extend(callbacks)
                 if route.callbacks:
                     current_callbacks.extend(route.callbacks)
+                current_generate_unique_id = get_value_or_default(
+                    route.generate_unique_id_function,
+                    router.generate_unique_id_function,
+                    generate_unique_id_function,
+                    self.generate_unique_id_function,
+                )
                 kwargs = dict(
                     response_model=route.response_model,
                     status_code=route.status_code,
@@ -282,6 +296,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
                     name=route.name,
                     callbacks=current_callbacks,
                     openapi_extra=route.openapi_extra,
+                    generate_unique_id_function=current_generate_unique_id,
                 )
                 if isinstance(route, HttpizeErrorsAPIRoute):
                     kwargs["httpize_errors"] = route.httpize_errors  # type: ignore
