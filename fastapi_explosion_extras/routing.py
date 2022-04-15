@@ -6,7 +6,8 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set
 from fastapi import HTTPException, Request, Response, params
 from fastapi.applications import FastAPI
 from fastapi.datastructures import Default, DefaultPlaceholder
-from fastapi.encoders import DictIntStrAny, SetIntStr
+from fastapi.encoders import DictIntStrAny, SetIntStr, jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
 from fastapi.types import DecoratedCallable
@@ -53,11 +54,19 @@ class HttpizeErrorsAPIRoute(APIRoute):
                 if self.logger:
                     self.logger.debug(f"route duration: {duration}")
                     self.logger.debug(f"route response: {response}")
+            # except RequestValidationError as e:
+            #     body = await request.body()
+            #     detail = {
+            #         "errors": e.errors(),
+            #         "body": body.decode(),
+            #         "path_params": jsonable_encoder(request.path_params),
+            #         "query_params": jsonable_encoder(request.query_params),
+            #     }
+            #     raise HTTPException(status_code=422, detail=detail)
             except error_types as e:  # type: ignore
                 if self.logger:
                     self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
                     self.logger.error(str(e))
-
                 # If the error is one that we want to catch, return a
                 # consistent response with the Error type so it can
                 # be reversed by the PAM SDK

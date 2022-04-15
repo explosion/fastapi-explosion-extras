@@ -1,4 +1,5 @@
 import logging
+import uuid
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
@@ -73,4 +74,26 @@ def test_logger_set():
         return "test"
 
     assert router.routes[0].logger == logger
+
+
+def test_request_validation_exception():
+    app = FastAPI()
+    app.router = HttpizeErrorsAPIRouter.from_app(app)
+    app.include_router(api_router)
+    init_app(app)
+
+    assert isinstance(app.routes[-1], routing.Route)
+
+    client = TestClient(app)
+    res = client.get("/testing_specific", params={"i": uuid.uuid4()})
+    assert res.status_code == 422
+    val_error_data = res.json()
+    assert "errors" in val_error_data
+    assert "body" in val_error_data
+    assert "path_params" in val_error_data
+    assert "query_params" in val_error_data
+
+    client = TestClient(app)
+    res = client.get("/testing_specific", params={"i": -1})
+    assert res.status_code == 400
     

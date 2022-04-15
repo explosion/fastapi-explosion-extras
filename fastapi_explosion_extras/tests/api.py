@@ -10,6 +10,17 @@ def test_route(i: int):
     return {"i": i}
 
 
+class SpecError(ValueError):
+    pass
+
+
+@router.get("/testing_specific", httpize_errors={SpecError: 400})
+def test_route_specific(i: int):
+    if i < 1:
+        raise SpecError("Bad Input Data")
+    return {"i": i}
+
+
 if __name__ == "__main__":
     from fastapi import FastAPI
     import uvicorn
