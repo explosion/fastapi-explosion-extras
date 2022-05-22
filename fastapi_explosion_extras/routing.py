@@ -300,7 +300,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
                 )
                 if isinstance(route, HttpizeErrorsAPIRoute):
                     kwargs["httpize_errors"] = route.httpize_errors  # type: ignore
-                self.add_api_route( 
+                self.add_api_route(
                     prefix + route.path, route.endpoint, **kwargs  # type: ignore
                 )
 
@@ -331,6 +331,13 @@ class HttpizeErrorsAPIRouter(APIRouter):
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["GET"], **kwargs
+        )
+
+    def patch(
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.api_route(
+            path=path, httpize_errors=httpize_errors, methods=["PATCH"], **kwargs
         )
 
     def put(
