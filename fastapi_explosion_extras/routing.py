@@ -1,3 +1,4 @@
+import re
 import time
 import traceback
 from logging import Logger
@@ -10,11 +11,23 @@ from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
 from fastapi.types import DecoratedCallable
-from fastapi.utils import generate_unique_id, get_value_or_default
+from fastapi.utils import get_value_or_default
 from starlette import routing
 from starlette.routing import BaseRoute
 
 from .types import ErrorsType
+
+
+try:
+    # Backwards Compatible with older FastAPI versions
+    from fastapi.utils import generate_unique_id
+except ImportError:
+    def generate_unique_id(route: "APIRoute") -> str:
+        operation_id = route.name + route.path_format
+        operation_id = re.sub("[^0-9a-zA-Z_]", "_", operation_id)
+        assert route.methods
+        operation_id = operation_id + "_" + list(route.methods)[0].lower()
+        return operation_id
 
 
 class HttpizeErrorsAPIRoute(APIRoute):
@@ -29,6 +42,9 @@ class HttpizeErrorsAPIRoute(APIRoute):
         httpize_errors: Optional[ErrorsType] = None,
         logger: Optional[Logger] = None,
         empty_response: Response = Response(status_code=204),
+        generate_unique_id_function: Union[
+            Callable[["APIRoute"], str], DefaultPlaceholder
+        ] = Default(generate_unique_id),
         **kwargs,
     ) -> None:
         if "operation_id" not in kwargs:
@@ -37,6 +53,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
         self.httpize_errors = httpize_errors or {}
         self.logger = HttpizeErrorsAPIRoute.logger or logger
         self.empty_response = empty_response
+        self.generate_unique_id_function = generate_unique_id_function
 
     def get_route_handler(
         self,
@@ -111,12 +128,21 @@ class HttpizeErrorsAPIRouter(APIRouter):
         )
         return router
 
-    def __init__(self, *args, logger: Optional[Logger] = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        logger: Optional[Logger] = None,
+        generate_unique_id_function: Union[
+            Callable[["APIRoute"], str], DefaultPlaceholder
+        ] = Default(generate_unique_id),
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         route_class = HttpizeErrorsAPIRoute
         if logger is not None:
             route_class.logger = logger
         self.route_class = route_class
+        self.generate_unique_id_function = generate_unique_id_function
 
     def add_api_route(
         self,
