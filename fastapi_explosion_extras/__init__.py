@@ -3,6 +3,7 @@ __version__ = '0.3.0'
 from .initialize import init_app
 from .routing import HttpizeErrorsAPIRoute, HttpizeErrorsAPIRouter
 from .types import ErrorMessage, ErrorResponse, ErrorsType
+from .pagination import Page, PageParams
 
 __all__ = [
     "__version__",
