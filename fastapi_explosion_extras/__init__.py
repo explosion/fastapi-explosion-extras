@@ -12,5 +12,7 @@ __all__ = [
     "ErrorResponse",
     "ErrorsType",
     "HttpizeErrorsAPIRoute",
-    "HttpizeErrorsAPIRouter"
+    "HttpizeErrorsAPIRouter",
+    "Page",
+    "PageParams"
 ]
