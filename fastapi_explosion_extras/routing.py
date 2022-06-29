@@ -38,14 +38,14 @@ class HttpizeErrorsAPIRoute(APIRoute):
 
     def __init__(
         self,
-        *args,
+        *args: Any,
         httpize_errors: Optional[ErrorsType] = None,
         logger: Optional[Logger] = None,
         empty_response: Response = Response(status_code=204),
         generate_unique_id_function: Union[
             Callable[["APIRoute"], str], DefaultPlaceholder
         ] = Default(generate_unique_id),
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if "operation_id" not in kwargs:
             kwargs["operation_id"] = self.name
@@ -130,12 +130,12 @@ class HttpizeErrorsAPIRouter(APIRouter):
 
     def __init__(
         self,
-        *args,
+        *args: Any,
         logger: Optional[Logger] = None,
         generate_unique_id_function: Union[
             Callable[["APIRoute"], str], DefaultPlaceholder
         ] = Default(generate_unique_id),
-        **kwargs
+        **kwargs: Any
     ):
         super().__init__(*args, **kwargs)
         route_class = HttpizeErrorsAPIRoute
@@ -228,7 +228,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
         self.routes.append(route)
 
     def api_route(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             self.add_api_route(path, func, httpize_errors=httpize_errors, **kwargs)
@@ -353,35 +353,35 @@ class HttpizeErrorsAPIRouter(APIRouter):
             self.add_event_handler("shutdown", handler)
 
     def get(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["GET"], **kwargs
         )
 
     def patch(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["PATCH"], **kwargs
         )
 
     def put(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["PUT"], **kwargs
         )
 
     def post(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["POST"], **kwargs
         )
 
     def delete(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["DELETE"], **kwargs

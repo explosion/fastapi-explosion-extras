@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 _ReturnT = ty.TypeVar("_ReturnT")
-ErrorsType = ty.Dict[Exception, ty.Union[int, ty.Tuple[int, str]]]
+ErrorsType = ty.Dict[ty.Type[Exception], ty.Union[int, ty.Tuple[int, str]]]
 ResponsesType = ty.Dict[ty.Union[int, str], ty.Dict[str, ty.Any]]
 
 
