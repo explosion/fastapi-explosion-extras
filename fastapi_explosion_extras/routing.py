@@ -72,8 +72,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
                     self.logger.debug(f"route response: {response}")
             except error_types as e:  # type: ignore
                 if self.logger:
-                    self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
-                    self.logger.error(str(e))
+                    self.logger.info("Route failed with expected error")
 
                 # If the error is one that we want to catch, return a
                 # consistent response with the Error type so it can
@@ -96,8 +95,8 @@ class HttpizeErrorsAPIRoute(APIRoute):
                 raise HTTPException(status_code=code, detail=detail) from None
             except Exception as e:
                 if self.logger:
-                    self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
-                raise e
+                    self.logger.exception("Unknown exception in error handling logic")
+                raise
             else:
                 if response is None or getattr(response, "body", None) == b"null":
                     # Return an empty response instead of None/null for delete requests
