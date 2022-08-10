@@ -1,7 +1,7 @@
 import re
 import time
 import traceback
-from logging import Logger
+import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set, Type, Union
 
 from fastapi import HTTPException, Request, Response, params
@@ -16,6 +16,9 @@ from starlette import routing
 from starlette.routing import BaseRoute
 
 from .types import ErrorsType
+
+
+logger = logging.getLogger(__name__)
 
 
 try:
@@ -34,13 +37,11 @@ class HttpizeErrorsAPIRoute(APIRoute):
     """HttpizeErrorsAPIRoute overrides default FastAPI behavior to
     add common Response error types and set the OpenAPI operation_id
     to the name of the decorated route function."""
-    logger: Optional[Logger] = None
 
     def __init__(
         self,
         *args: Any,
         httpize_errors: Optional[ErrorsType] = None,
-        logger: Optional[Logger] = None,
         empty_response: Response = Response(status_code=204),
         generate_unique_id_function: Union[
             Callable[["APIRoute"], str], DefaultPlaceholder
@@ -51,7 +52,6 @@ class HttpizeErrorsAPIRoute(APIRoute):
             kwargs["operation_id"] = self.name
         super().__init__(*args, **kwargs)
         self.httpize_errors = httpize_errors or {}
-        self.logger = HttpizeErrorsAPIRoute.logger or logger
         self.empty_response = empty_response
         self.generate_unique_id_function = generate_unique_id_function
 
@@ -67,12 +67,10 @@ class HttpizeErrorsAPIRoute(APIRoute):
                 response: Response = await original_route_handler(request)
                 duration = time.time() - before
                 response.headers["X-Response-Time"] = str(duration)
-                if self.logger:
-                    self.logger.debug(f"route duration: {duration}")
-                    self.logger.debug(f"route response: {response}")
+                logger.debug("route duration: %s", duration)
+                logger.debug("route response: %s", response)
             except error_types as e:  # type: ignore
-                if self.logger:
-                    self.logger.info("Route failed with expected error")
+                logger.debug("Route failed with expected error")
 
                 # If the error is one that we want to catch, return a
                 # consistent response with the Error type so it can
@@ -94,8 +92,7 @@ class HttpizeErrorsAPIRoute(APIRoute):
                 }
                 raise HTTPException(status_code=code, detail=detail) from None
             except Exception as e:
-                if self.logger:
-                    self.logger.exception("Unknown exception in error handling logic")
+                logger.exception("Unknown exception in error handling logic")
                 raise
             else:
                 if response is None or getattr(response, "body", None) == b"null":
@@ -130,7 +127,6 @@ class HttpizeErrorsAPIRouter(APIRouter):
     def __init__(
         self,
         *args: Any,
-        logger: Optional[Logger] = None,
         generate_unique_id_function: Union[
             Callable[["APIRoute"], str], DefaultPlaceholder
         ] = Default(generate_unique_id),
@@ -138,8 +134,6 @@ class HttpizeErrorsAPIRouter(APIRouter):
     ):
         super().__init__(*args, **kwargs)
         route_class = HttpizeErrorsAPIRoute
-        if logger is not None:
-            route_class.logger = logger
         self.route_class = route_class
         self.generate_unique_id_function = generate_unique_id_function
 

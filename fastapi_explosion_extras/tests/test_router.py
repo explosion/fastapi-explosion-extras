@@ -58,19 +58,13 @@ def test_route_definition_app_router_included():
 
 def test_logger_set():
     router = HttpizeErrorsAPIRouter(tags=["some tag"])
-    
+
     @router.get("testing")
     def test_route():
         return "test"
 
-    assert router.routes[0].logger == None
+    router = HttpizeErrorsAPIRouter(tags=["some tag"])
 
-    logger = logging.getLogger(__name__)
-    router = HttpizeErrorsAPIRouter(tags=["some tag"], logger=logger)
-    
     @router.get("testing")
     def test_route():
         return "test"
-
-    assert router.routes[0].logger == logger
-    
