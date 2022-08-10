@@ -14,5 +14,3 @@ def test_init_app():
     assert app.title == "Test App"
     assert isinstance(app.router, HttpizeErrorsAPIRouter)
     assert app.router.dependency_overrides_provider == app
-
-    assert False
