@@ -7,7 +7,8 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set
 from fastapi import HTTPException, Request, Response, params
 from fastapi.applications import FastAPI
 from fastapi.datastructures import Default, DefaultPlaceholder
-from fastapi.encoders import DictIntStrAny, SetIntStr
+SetIntStr = Set[Union[int, str]]
+DictIntStrAny = Dict[Union[int, str], Any]
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
 from fastapi.types import DecoratedCallable
