@@ -92,9 +92,6 @@ class HttpizeErrorsAPIRoute(APIRoute):
                     "type": e.__class__.__name__.replace("_", ""),
                 }
                 raise HTTPException(status_code=code, detail=detail) from None
-            except Exception as e:
-                logger.exception("Unknown exception in error handling logic")
-                raise
             else:
                 if response is None or getattr(response, "body", None) == b"null":
                     # Return an empty response instead of None/null for delete requests
