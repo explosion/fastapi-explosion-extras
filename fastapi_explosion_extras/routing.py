@@ -1,60 +1,42 @@
-import re
 import time
 import traceback
-import logging
+from logging import Logger
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Set, Type, Union
+from enum import Enum
 
 from fastapi import HTTPException, Request, Response, params
 from fastapi.applications import FastAPI
 from fastapi.datastructures import Default, DefaultPlaceholder
-SetIntStr = Set[Union[int, str]]
-DictIntStrAny = Dict[Union[int, str], Any]
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
-from fastapi.types import DecoratedCallable
+
+SetIntStr = Set[Union[int, str]]
+DictIntStrAny = Dict[Union[int, str], Any]
+DecoratedCallable = Callable[..., Any]
 from fastapi.utils import get_value_or_default
 from starlette import routing
 from starlette.routing import BaseRoute
 
-from .types import ErrorsType
-
-
-logger = logging.getLogger(__name__)
-
-
-try:
-    # Backwards Compatible with older FastAPI versions
-    from fastapi.utils import generate_unique_id
-except ImportError:
-    def generate_unique_id(route: "APIRoute") -> str:
-        operation_id = route.name + route.path_format
-        operation_id = re.sub("[^0-9a-zA-Z_]", "_", operation_id)
-        assert route.methods
-        operation_id = operation_id + "_" + list(route.methods)[0].lower()
-        return operation_id
+from .types import ErrorsType, ResponsesType, _ReturnT
 
 
 class HttpizeErrorsAPIRoute(APIRoute):
     """HttpizeErrorsAPIRoute overrides default FastAPI behavior to
     add common Response error types and set the OpenAPI operation_id
     to the name of the decorated route function."""
+    logger: Optional[Logger] = None
 
     def __init__(
         self,
-        *args: Any,
+        *args,
         httpize_errors: Optional[ErrorsType] = None,
-        empty_response: Response = Response(status_code=204),
-        generate_unique_id_function: Union[
-            Callable[["APIRoute"], str], DefaultPlaceholder
-        ] = Default(generate_unique_id),
-        **kwargs: Any,
+        logger: Optional[Logger] = None,
+        **kwargs,
     ) -> None:
-        if "operation_id" not in kwargs:
-            kwargs["operation_id"] = self.name
         super().__init__(*args, **kwargs)
         self.httpize_errors = httpize_errors or {}
-        self.empty_response = empty_response
-        self.generate_unique_id_function = generate_unique_id_function
+        self.operation_id = self.name
+        self.logger = HttpizeErrorsAPIRoute.logger or logger
 
     def get_route_handler(
         self,
@@ -68,10 +50,13 @@ class HttpizeErrorsAPIRoute(APIRoute):
                 response: Response = await original_route_handler(request)
                 duration = time.time() - before
                 response.headers["X-Response-Time"] = str(duration)
-                logger.debug("route duration: %s", duration)
-                logger.debug("route response: %s", response)
+                if self.logger:
+                    self.logger.debug(f"route duration: {duration}")
+                    self.logger.debug(f"route response: {response}")
             except error_types as e:  # type: ignore
-                logger.debug("Route failed with expected error")
+                if self.logger:
+                    self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
+                    self.logger.error(str(e))
 
                 # If the error is one that we want to catch, return a
                 # consistent response with the Error type so it can
@@ -92,10 +77,14 @@ class HttpizeErrorsAPIRoute(APIRoute):
                     "type": e.__class__.__name__.replace("_", ""),
                 }
                 raise HTTPException(status_code=code, detail=detail) from None
+            except Exception as e:
+                if self.logger:
+                    self.logger.error("\n".join(traceback.format_tb(e.__traceback__)))
+                raise e
             else:
-                if response is None or getattr(response, "body", None) == b"null":
+                if response is None or response.body == b"null":
                     # Return an empty response instead of None/null for delete requests
-                    return self.empty_response
+                    return Response(status_code=204)
                 else:
                     return response
 
@@ -122,18 +111,12 @@ class HttpizeErrorsAPIRouter(APIRouter):
         )
         return router
 
-    def __init__(
-        self,
-        *args: Any,
-        generate_unique_id_function: Union[
-            Callable[["APIRoute"], str], DefaultPlaceholder
-        ] = Default(generate_unique_id),
-        **kwargs: Any
-    ):
+    def __init__(self, *args, logger: Optional[Logger] = None, **kwargs):
         super().__init__(*args, **kwargs)
         route_class = HttpizeErrorsAPIRoute
+        if logger is not None:
+            route_class.logger = logger
         self.route_class = route_class
-        self.generate_unique_id_function = generate_unique_id_function
 
     def add_api_route(
         self,
@@ -143,7 +126,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
         httpize_errors: Optional[ErrorsType] = None,
         response_model: Optional[Type[Any]] = None,
         status_code: Optional[int] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[List[str | Enum]] = None,
         dependencies: Optional[Sequence[params.Depends]] = None,
         summary: Optional[str] = None,
         description: Optional[str] = None,
@@ -165,9 +148,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         openapi_extra: Optional[Dict[str, Any]] = None,
-        generate_unique_id_function: Union[
-            Callable[[APIRoute], str], DefaultPlaceholder
-        ] = Default(generate_unique_id)
+        generate_unique_id_function: Optional[Callable[[APIRoute], str]] = None,
     ) -> None:
         route_class = self.route_class
         responses = responses or {}
@@ -184,9 +165,6 @@ class HttpizeErrorsAPIRouter(APIRouter):
         current_callbacks = self.callbacks.copy()
         if callbacks:
             current_callbacks.extend(callbacks)
-        current_generate_unique_id = get_value_or_default(
-            generate_unique_id_function, self.generate_unique_id_function
-        )
         route = route_class(
             self.prefix + path,
             httpize_errors=httpize_errors,
@@ -214,12 +192,11 @@ class HttpizeErrorsAPIRouter(APIRouter):
             dependency_overrides_provider=self.dependency_overrides_provider,
             callbacks=current_callbacks,
             openapi_extra=openapi_extra,
-            generate_unique_id_function=current_generate_unique_id
         )
         self.routes.append(route)
 
     def api_route(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             self.add_api_route(path, func, httpize_errors=httpize_errors, **kwargs)
@@ -239,9 +216,7 @@ class HttpizeErrorsAPIRouter(APIRouter):
         callbacks: Optional[List[BaseRoute]] = None,
         deprecated: Optional[bool] = None,
         include_in_schema: bool = True,
-        generate_unique_id_function: Callable[[APIRoute], str] = Default(
-            generate_unique_id
-        ),
+        generate_unique_id_function: Optional[Callable[[APIRoute], str]] = None,
     ) -> None:
         if prefix:
             assert prefix.startswith("/"), "A path prefix must start with '/'"
@@ -282,12 +257,6 @@ class HttpizeErrorsAPIRouter(APIRouter):
                     current_callbacks.extend(callbacks)
                 if route.callbacks:
                     current_callbacks.extend(route.callbacks)
-                current_generate_unique_id = get_value_or_default(
-                    route.generate_unique_id_function,
-                    router.generate_unique_id_function,
-                    generate_unique_id_function,
-                    self.generate_unique_id_function,
-                )
                 kwargs = dict(
                     response_model=route.response_model,
                     status_code=route.status_code,
@@ -313,11 +282,10 @@ class HttpizeErrorsAPIRouter(APIRouter):
                     name=route.name,
                     callbacks=current_callbacks,
                     openapi_extra=route.openapi_extra,
-                    generate_unique_id_function=current_generate_unique_id,
                 )
                 if isinstance(route, HttpizeErrorsAPIRoute):
                     kwargs["httpize_errors"] = route.httpize_errors  # type: ignore
-                self.add_api_route(
+                self.add_api_route( 
                     prefix + route.path, route.endpoint, **kwargs  # type: ignore
                 )
 
@@ -344,35 +312,28 @@ class HttpizeErrorsAPIRouter(APIRouter):
             self.add_event_handler("shutdown", handler)
 
     def get(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["GET"], **kwargs
         )
 
-    def patch(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
-    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
-        return self.api_route(
-            path=path, httpize_errors=httpize_errors, methods=["PATCH"], **kwargs
-        )
-
     def put(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["PUT"], **kwargs
         )
 
     def post(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["POST"], **kwargs
         )
 
     def delete(
-        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs: Any
+        self, path: str, *, httpize_errors: Optional[ErrorsType] = None, **kwargs
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         return self.api_route(
             path=path, httpize_errors=httpize_errors, methods=["DELETE"], **kwargs
